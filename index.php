@@ -1,8 +1,18 @@
 <?php
+error_reporting(E_ALL);
+ini_set("display_errors", "1");
+ini_set("display_startup_errors", "1");
+ini_set("log_errors", "0");
 
-define("NUMBER_TO_FIND", 42);
+define("LANGUAGE", "en");
+define("CHARSET", "UTF-8");
+define("LOCALE", "hu_HU");
 
-$data = '{
+define("DEBUG", 0);
+
+
+define("VALUE", 42);
+define("DATA", '{
 "5":{
         "0":0,"1":4,"2":15
 },
@@ -22,90 +32,44 @@ $data = '{
         }
 },
 "samplekey":42
-}';
+}');
 
-function json_pretty_print( $json )
+$data = json_decode(DATA, true);
+//var_dump($data);
+
+$count_value = 0;
+
+function search_callback($needle, $key, $value)
 {
-	$result = '';
-	$level = 0;
-	$in_quotes = false;
-	$in_escape = false;
-	$ends_line_level = NULL;
-	$json_length = strlen( $json );
-
-	for( $i = 0; $i < $json_length; $i++ ) {
-		$char = $json[$i];
-		$new_line_level = NULL;
-		$post = "";
-		if( $ends_line_level !== NULL ) {
-			$new_line_level = $ends_line_level;
-			$ends_line_level = NULL;
-		}
-		if ( $in_escape ) {
-			$in_escape = false;
-		} else if( $char === '"' ) {
-			$in_quotes = !$in_quotes;
-		} else if( ! $in_quotes ) {
-			switch( $char ) {
-				case '}': case ']':
-					$level--;
-					$ends_line_level = NULL;
-					$new_line_level = $level;
-					break;
-
-				case '{': case '[':
-					$level++;
-				case ',':
-					$ends_line_level = $level;
-					break;
-
-				case ':':
-					$post = " ";
-					break;
-
-				case " ": case "\t": case "\n": case "\r":
-					$char = "";
-					$ends_line_level = $new_line_level;
-					$new_line_level = NULL;
-					break;
-			}
-		} else if ( $char === '\\' ) {
-			$in_escape = true;
-		}
-		if( $new_line_level !== NULL ) {
-			$result .= "\n".str_repeat( "\t", $new_line_level );
-		}
-		$result .= $char.$post;
-	}
-
-	return $result;
+//    echo $key." => ".$needle."\n";
+    if ($needle == $value)
+        $GLOBALS["count_value"]++;
 }
 
-function recursive_array_search($needle,$haystack) {
-    foreach($haystack as $key=>$value) {
-        $current_key=$key;
-        if($needle===$value OR (is_array($value) && recursive_array_search($needle,$value) !== false)) {
+array_walk_recursive($data, 'search_callback', VALUE);
+
+echo $GLOBALS["count_value"]."\n";
+
+$count_value = 0;
+
+function array_search_recursive($needle, $haystack, $parent=0, $parent_key=0) {
+    foreach($haystack as $key => $value) {
+//        echo "[".$key." => ".$value.", ".$parent.", ".$parent_key."]\n";
+        if ($key == $needle) {
+            $parent_key = $parent;
+        }
+        if (($value == $needle) && ($parent_key) && ($parent_key <= $parent)) {
+            $GLOBALS["count_value"]++;
+        }
+        $current_key = $key;
+        if (is_array($value) && (array_search_recursive($needle, $value, $parent+1, $parent_key) !== false)) {
             return $current_key;
         }
     }
     return false;
 }
 
-$arr = json_decode($data, true);
+array_search_recursive(VALUE, $data);
 
-var_dump($arr);
-
-//var_dump(recursive_array_search(NUMBER_TO_FIND, $arr));
-
-$count = 0;
-
-function finder($item, $key)
-{
-    if ((is_int($item) && ($item === NUMBER_TO_FIND)) || ((is_int($key)) && ($key === NUMBER_TO_FIND)))
-        $GLOBALS["count"]++;
-}
-
-array_walk_recursive($arr, 'finder');
-
-echo $GLOBALS["count"];
+echo $GLOBALS["count_value"]."\n";
 ?>
