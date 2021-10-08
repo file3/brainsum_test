@@ -4,15 +4,11 @@ ini_set("display_errors", "1");
 ini_set("display_startup_errors", "1");
 ini_set("log_errors", "0");
 
-define("LANGUAGE", "en");
-define("CHARSET", "UTF-8");
-define("LOCALE", "hu_HU");
-
 define("DEBUG", 0);
 
 
-define("VALUE", 42);
-define("DATA", '{
+define("VALUE_TO_FIND", 42);
+define("INPUT_DATA", '{
 "5":{
         "0":0,"1":4,"2":15
 },
@@ -34,42 +30,43 @@ define("DATA", '{
 "samplekey":42
 }');
 
-$data = json_decode(DATA, true);
-//var_dump($data);
+$input_data = json_decode(INPUT_DATA, true);
+if (DEBUG) var_dump($input_data);
 
-$count_value = 0;
+$value_count = 0;
 
-function search_callback($needle, $key, $value)
+function array_walk_callback($value, $key, $value_to_find)
 {
-//    echo $key." => ".$needle."\n";
-    if ($needle == $value)
-        $GLOBALS["count_value"]++;
+    if (DEBUG) echo $key." => ".$value."\n";
+    if ($value == $value_to_find)
+        $GLOBALS["value_count"]++;
 }
 
-array_walk_recursive($data, 'search_callback', VALUE);
+array_walk_recursive($input_data, 'array_walk_callback', VALUE_TO_FIND);
 
-echo $GLOBALS["count_value"]."\n";
+echo $GLOBALS["value_count"]."\n";
 
-$count_value = 0;
+$value_count = 0;
 
-function array_search_recursive($needle, $haystack, $parent=0, $parent_key=0) {
-    foreach($haystack as $key => $value) {
-//        echo "[".$key." => ".$value.", ".$parent.", ".$parent_key."]\n";
-        if ($key == $needle) {
-            $parent_key = $parent;
+function array_search_recursive($input_data, $value_to_find, $value_level=0, $key_level=0) {
+    foreach($input_data as $key => $value) {
+        if (DEBUG) echo "[".$key." => ".(is_array($value) ? "Array" : $value).", ".$value_level.", ".$key_level."]\n";
+        if ($key == $value_to_find) {
+            $key_level = $value_level;
         }
-        if (($value == $needle) && ($parent_key) && ($parent_key <= $parent)) {
-            $GLOBALS["count_value"]++;
+        if (($value == $value_to_find) && ($key_level) && ($key_level <= $value_level)) {
+            $GLOBALS["value_count"]++;
         }
         $current_key = $key;
-        if (is_array($value) && (array_search_recursive($needle, $value, $parent+1, $parent_key) !== false)) {
+        if (is_array($value) && (array_search_recursive($value, $value_to_find, $value_level+1, $key_level) !== false)) {
             return $current_key;
         }
     }
     return false;
 }
 
-array_search_recursive(VALUE, $data);
+array_search_recursive($input_data, VALUE_TO_FIND);
 
-echo $GLOBALS["count_value"]."\n";
+echo $GLOBALS["value_count"]."\n";
+
 ?>
