@@ -29,6 +29,27 @@ define("INPUT_DATA", '{
 },
 "samplekey":42
 }');
+define("INPUT_DATA_2", '{
+"5":{
+        "0":0,"1":4,"2":15
+},
+"7":{
+        "1":56,"2":31,"3":42
+},
+"42":{
+        "a":21,"b":19,"c":33,"49":{
+                "m":22,"n":{
+                        "x":13,"y":25,"z":42
+                }
+        }
+},
+"99":{
+        "1":21,"2":19,"42":33,"39":{
+                "g":42,"e":13,"f":25,"h":49
+        }
+},
+"samplekey":42
+}');
 
 $input_data = json_decode(INPUT_DATA, true);
 if (DEBUG) var_dump($input_data);
@@ -48,17 +69,19 @@ echo $GLOBALS["value_count"]."\n";
 
 $value_count = 0;
 
-function array_search_recursive($input_data, $value_to_find, $value_level=0, $key_level=0) {
+function array_search_recursive($input_data, $value_to_find, $value_level=0, $key_found=false) {
     foreach($input_data as $key => $value) {
-        if (DEBUG) echo "[".$key." => ".(is_array($value) ? "Array" : $value).", ".$value_level.", ".$key_level."]\n";
+        if (DEBUG) echo "[".$key." => ".(is_array($value) ? "Array" : $value).", ".$value_level.", {".$key_found."}]\n";
+        if ($value_level == 0)
+            $key_found = false;
         if ($key == $value_to_find) {
-            $key_level = $value_level;
+            $key_found = true;
         }
-        if (($value == $value_to_find) && ($key_level) && ($key_level <= $value_level)) {
+        if ((!is_array($value)) && ($value == $value_to_find) && ($key_found)) {
             $GLOBALS["value_count"]++;
         }
         $current_key = $key;
-        if (is_array($value) && (array_search_recursive($value, $value_to_find, $value_level+1, $key_level) !== false)) {
+        if (is_array($value) && (array_search_recursive($value, $value_to_find, $value_level+1, $key_found) !== false)) {
             return $current_key;
         }
     }
